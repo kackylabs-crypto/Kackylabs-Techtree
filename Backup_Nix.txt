@@ -1,0 +1,131 @@
+{ config, pkgs, ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+  ];
+  # flakes
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # E drive
+    fileSystems."/mnt/d" = {
+  device = "/dev/disk/by-uuid/4b9016c7-bd9c-473b-bd26-3883255471ee";
+  fsType = "btrfs";
+  options = [ "defaults" "nofail" "compress=zstd" ];
+};
+  # Bootloader
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # Networking
+  networking.hostName = "nixos";
+  networking.networkmanager.enable = true;
+
+  # Timezone & Locale
+  time.timeZone = "Asia/Kolkata";
+  i18n.defaultLocale = "en_IN.UTF-8";
+  i18n.extraLocaleSettings = {
+    LC_CTYPE = "en_IN.UTF-8";
+    LC_COLLATE = "en_IN.UTF-8";
+    LC_TIME = "en_IN.UTF-8";
+  };
+  i18n.supportedLocales = [ "all" ];
+
+  # --- DESKTOP ENVIRONMENT (KDE PLASMA 6 WAYLAND) ---
+  services.xserver.enable = true;
+  services.displayManager.sddm = {
+    enable = true;
+    wayland.enable = true;
+  };
+  services.desktopManager.plasma6.enable = true;
+
+  # Keyboard Layout
+  services.xserver.xkb = {
+    layout = "us";
+    variant = "";
+  };
+
+  # Wayland Environment Variables for NVIDIA & Electron Apps
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    LIBVA_DRIVER_NAME = "nvidia";
+    XDG_SESSION_TYPE = "wayland";
+    GBM_BACKEND = "nvidia-drm";
+    __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+  };
+
+  # --- SOUND (PIPEWIRE) ---
+  services.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+  };
+
+  # --- GRAPHICS & NVIDIA (RTX 3060) ---
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
+
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  hardware.nvidia = {
+    modesetting.enable = true;
+    powerManagement.enable = false;
+    powerManagement.finegrained = false;
+    open = true; # High stability for Turing/Ampere GPUs
+    nvidiaSettings = true;
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+  };
+
+  # Allow Unfree Software (Steam, NVIDIA Drivers)
+  nixpkgs.config.allowUnfree = true;
+
+  # --- GAMING (STEAM & PROTON) ---
+  programs.steam = {
+    enable = true;
+    remotePlay.openFirewall = true;
+    dedicatedServer.openFirewall = true;
+  };
+
+  # --- USER ACCOUNT ---
+  users.users."kacky" = {
+    isNormalUser = true;
+    description = "kacky";
+    extraGroups = [ "networkmanager" "wheel" ];
+    packages = with pkgs; [
+      kdePackages.kate
+    ];
+  };
+
+  # --- SYSTEM PACKAGES ---
+  environment.systemPackages = with pkgs; [
+    nerd-fonts.iosevka
+    neovim
+    (builtins.getFlake "github:areofyl/fetch").packages.${pkgs.system}.default
+    cmatrix
+    peaclock
+    figlet
+    cava
+    fastfetch
+    kitty
+    wget
+    git
+    curl
+    btop
+    obs-studio
+    librewolf
+    vlc
+    spotify
+    krita
+    rofi
+    kdePackages.kdenlive
+  ];
+
+  # Enable Flatpak
+  services.flatpak.enable = true;
+
+  system.stateVersion = "26.05";
+}
