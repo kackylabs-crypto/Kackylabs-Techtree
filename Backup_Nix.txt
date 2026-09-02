@@ -80,10 +80,10 @@
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # Allow Unfree Software (Steam, NVIDIA Drivers)
+  # Allow Unfree Software
   nixpkgs.config.allowUnfree = true;
 
-  # --- GAMING (STEAM & PROTON) ---
+  # --- GAMING ---
   programs.steam = {
     enable = true;
     remotePlay.openFirewall = true;
@@ -99,13 +99,17 @@
       kdePackages.kate
     ];
   };
+  #----- RGB ------
+    services.hardware.openrgb.enable = true;
 
   # --- SYSTEM PACKAGES ---
   environment.systemPackages = with pkgs; [
     nerd-fonts.iosevka
     neovim
     (builtins.getFlake "github:areofyl/fetch").packages.${pkgs.system}.default
+    (builtins.getFlake "github:oxcl/nix-flake-helium-browser").packages.${pkgs.system}.default
     cmatrix
+    openrgb
     peaclock
     figlet
     cava
@@ -116,11 +120,12 @@
     curl
     btop
     obs-studio
-    librewolf
     vlc
     spotify
+    proton-vpn
     krita
     rofi
+    vscodium
     kdePackages.kdenlive
   ];
 
